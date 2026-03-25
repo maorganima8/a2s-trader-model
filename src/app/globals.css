@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* M3 Dark Theme Tokens */
+  --md-bg: #141218;
+  --md-surface: #141218;
+  --md-surface-low: #1c1b1f;
+  --md-surface-container: #211f26;
+  --md-surface-high: #2b2930;
+  --md-surface-highest: #36343b;
+  --md-on-surface: #e6e1e5;
+  --md-on-surface-variant: #cac4d0;
+  --md-outline: #938f99;
+  --md-outline-variant: #49454f;
+  --md-primary: #EAB308;
+  --md-on-primary: #000000;
+  --md-primary-container: #3d2d00;
+  --md-on-primary-container: #ffd966;
+  --md-error: #ffb4ab;
+  --md-success: #6dd58c;
 }
+
+body {
+  font-family: 'Rubik', 'Segoe UI', Arial, sans-serif;
+  background-color: var(--md-bg);
+  color: var(--md-on-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* M3 Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--md-outline-variant); border-radius: 4px; }

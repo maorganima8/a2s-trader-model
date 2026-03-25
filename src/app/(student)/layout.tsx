@@ -16,7 +16,7 @@ export default async function StudentLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 pb-20">
+    <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--md-bg)' }}>
       {children}
       <BottomNav />
     </div>

@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
-      <body className="antialiased bg-gray-950 text-white min-h-screen">
+      <body className="antialiased min-h-screen" style={{ backgroundColor: 'var(--md-bg)', color: 'var(--md-on-surface)' }}>
         <Providers>{children}</Providers>
       </body>
     </html>
