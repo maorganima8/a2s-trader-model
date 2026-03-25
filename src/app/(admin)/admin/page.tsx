@@ -36,17 +36,17 @@ export default async function AdminDashboard() {
     (s: typeof students[0]) => !s.accessExpiresAt || s.accessExpiresAt > new Date()
   );
 
-  const tradedToday = new Set(todayTrades.map((t) => t.userId));
+  const tradedToday = new Set(todayTrades.map((t: typeof todayTrades[0]) => t.userId));
   const checklistedToday = new Set(
-    todayChecklists.filter((c) => c.step1 && c.step2 && c.step3 && c.step4 && c.step5 && c.step6).map((c) => c.userId)
+    todayChecklists.filter((c: typeof todayChecklists[0]) => c.step1 && c.step2 && c.step3 && c.step4 && c.step5 && c.step6).map((c: typeof todayChecklists[0]) => c.userId)
   );
-  const reviewedThisWeek = new Set(weeklyReviews.map((r) => r.userId));
+  const reviewedThisWeek = new Set(weeklyReviews.map((r: typeof weeklyReviews[0]) => r.userId));
 
-  const todayWins = todayTrades.filter((t) => t.result === "WIN").length;
-  const todayLosses = todayTrades.filter((t) => t.result === "LOSS").length;
+  const todayWins = todayTrades.filter((t: typeof todayTrades[0]) => t.result === "WIN").length;
+  const todayLosses = todayTrades.filter((t: typeof todayTrades[0]) => t.result === "LOSS").length;
 
   // Students expiring soon
-  const expiringSoon = students.filter((s) => {
+  const expiringSoon = students.filter((s: typeof students[0]) => {
     if (!s.accessExpiresAt) return false;
     const daysLeft = Math.ceil((s.accessExpiresAt.getTime() - Date.now()) / 86400000);
     return daysLeft > 0 && daysLeft <= 14;
