@@ -89,7 +89,7 @@ export default async function AdminDashboard() {
         <div className="bg-red-950/30 border border-red-900/50 rounded-2xl p-4 mb-5">
           <p className="text-red-400 font-semibold text-sm mb-2">⚠ גישה פגה בקרוב</p>
           <div className="space-y-1">
-            {expiringSoon.map((s) => {
+            {expiringSoon.map((s: typeof expiringSoon[0]) => {
               const days = Math.ceil((s.accessExpiresAt!.getTime() - Date.now()) / 86400000);
               return (
                 <div key={s.id} className="flex justify-between text-sm">
