@@ -8,6 +8,8 @@ export default function NewUserPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", email: "", phone: "", market: "FOREX" });
+  const [inviteLink, setInviteLink] = useState("");
+  const [copied, setCopied] = useState(false);
 
   function set(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -32,8 +34,59 @@ export default function NewUserPage() {
       return;
     }
 
-    router.push("/admin/students");
-    router.refresh();
+    const data = await res.json();
+    const link = `${window.location.origin}/setup?token=${data.user.id}`;
+    setInviteLink(link);
+  }
+
+  async function copyLink() {
+    await navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (inviteLink) {
+    return (
+      <div className="max-w-lg">
+        <h1 className="text-2xl font-black text-white mb-6">תלמיד נוצר!</h1>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-5">
+          <div className="flex items-center gap-3 bg-green-950/30 border border-green-900/40 rounded-xl px-4 py-3">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <p className="text-green-400 text-sm font-medium">החשבון נוצר בהצלחה</p>
+          </div>
+
+          <div>
+            <p className="text-zinc-400 text-sm mb-2">שלח את הקישור הזה לתלמיד כדי שיגדיר סיסמה:</p>
+            <div className="bg-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+              <p className="text-yellow-400 text-xs truncate" dir="ltr">{inviteLink}</p>
+              <button
+                onClick={copyLink}
+                className="flex-shrink-0 bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-3 py-1.5 rounded-lg text-xs transition"
+              >
+                {copied ? "✓ הועתק" : "העתק"}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <button
+              onClick={() => { setInviteLink(""); setForm({ name: "", email: "", phone: "", market: "FOREX" }); }}
+              className="py-2.5 rounded-xl text-sm font-medium bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition"
+            >
+              + תלמיד נוסף
+            </button>
+            <button
+              onClick={() => router.push("/admin/students")}
+              className="py-2.5 rounded-xl text-sm font-bold bg-yellow-500 text-black hover:bg-yellow-400 transition"
+            >
+              לרשימת תלמידים
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -94,7 +147,7 @@ export default function NewUserPage() {
             type="submit" disabled={loading}
             className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition text-sm mt-2"
           >
-            {loading ? "יוצר..." : "צור תלמיד ושלח הזמנה"}
+            {loading ? "יוצר..." : "צור תלמיד"}
           </button>
         </form>
       </div>
