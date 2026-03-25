@@ -33,7 +33,7 @@ export default async function AdminDashboard() {
   ]);
 
   const activeStudents = students.filter(
-    (s) => !s.accessExpiresAt || s.accessExpiresAt > new Date()
+    (s: typeof students[0]) => !s.accessExpiresAt || s.accessExpiresAt > new Date()
   );
 
   const tradedToday = new Set(todayTrades.map((t) => t.userId));
