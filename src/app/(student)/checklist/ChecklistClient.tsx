@@ -22,12 +22,12 @@ export default function ChecklistClient({ steps, initialSteps }: Props) {
 
   const doneCount = Object.values(checked).filter(Boolean).length;
   const allDone = doneCount === steps.length;
+  const pct = Math.round((doneCount / steps.length) * 100);
 
   async function toggle(stepId: StepId) {
     const newValue = !checked[stepId];
     setChecked((prev) => ({ ...prev, [stepId]: newValue }));
     setLoading(stepId);
-
     try {
       await fetch("/api/checklist", {
         method: "PATCH",
@@ -35,7 +35,6 @@ export default function ChecklistClient({ steps, initialSteps }: Props) {
         body: JSON.stringify({ step: stepId, value: newValue }),
       });
     } catch {
-      // revert on error
       setChecked((prev) => ({ ...prev, [stepId]: !newValue }));
     } finally {
       setLoading(null);
@@ -43,23 +42,28 @@ export default function ChecklistClient({ steps, initialSteps }: Props) {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Progress */}
-      <div className="bg-gray-900 rounded-2xl p-4 border border-gray-800 mb-4">
-        <div className="flex justify-between text-sm mb-2">
-          <span className="text-gray-400">התקדמות</span>
-          <span className="text-white font-medium">{doneCount}/{steps.length}</span>
+    <div className="space-y-3 pb-24">
+      {/* Progress bar */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-2">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-zinc-400 text-sm">התקדמות</span>
+          <span className={`text-sm font-bold ${allDone ? "text-yellow-400" : "text-white"}`}>
+            {doneCount}/{steps.length}
+          </span>
         </div>
-        <div className="w-full bg-gray-800 rounded-full h-2">
+        <div className="w-full bg-zinc-800 rounded-full h-1.5">
           <div
-            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(doneCount / steps.length) * 100}%` }}
+            className={`h-1.5 rounded-full transition-all duration-500 ${allDone ? "bg-yellow-400" : "bg-yellow-500"}`}
+            style={{ width: `${pct}%` }}
           />
         </div>
         {allDone && (
-          <p className="text-green-400 text-sm text-center mt-3 font-medium">
-            הצ׳קליסט הושלם — מוכן לסשן!
-          </p>
+          <div className="mt-3 flex items-center justify-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl py-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EAB308" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span className="text-yellow-400 text-sm font-semibold">מוכן לסשן!</span>
+          </div>
         )}
       </div>
 
@@ -75,33 +79,34 @@ export default function ChecklistClient({ steps, initialSteps }: Props) {
             disabled={isLoading}
             className={`w-full text-right p-4 rounded-2xl border transition-all duration-200 flex items-start gap-3 ${
               done
-                ? "bg-green-950 border-green-800"
-                : "bg-gray-900 border-gray-800 hover:border-gray-600"
-            }`}
+                ? "bg-yellow-500/5 border-yellow-500/25"
+                : "bg-zinc-900 border-zinc-800 hover:border-zinc-700 active:scale-[0.99]"
+            } ${isLoading ? "opacity-60" : ""}`}
           >
-            {/* Checkbox */}
-            <div
-              className={`flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
-                done ? "bg-green-500 border-green-500" : "border-gray-600"
-              }`}
-            >
-              {done && <span className="text-white text-sm">✓</span>}
-              {!done && (
-                <span className="text-gray-600 text-xs font-bold">{index + 1}</span>
+            {/* Circle */}
+            <div className={`flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
+              done ? "bg-yellow-500 border-yellow-500" : "border-zinc-700"
+            }`}>
+              {done ? (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              ) : (
+                <span className="text-zinc-600 text-xs font-bold">{index + 1}</span>
               )}
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className={`text-sm font-semibold ${done ? "text-green-400 line-through" : "text-white"}`}>
+              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                <span className={`text-sm font-semibold transition-all ${done ? "text-zinc-500 line-through" : "text-white"}`}>
                   {step.title}
                 </span>
-                <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-md font-mono">
                   {step.tf}
                 </span>
               </div>
-              <p className={`text-xs leading-relaxed ${done ? "text-gray-500" : "text-gray-400"}`}>
+              <p className={`text-xs leading-relaxed ${done ? "text-zinc-600" : "text-zinc-500"}`}>
                 {step.description}
               </p>
             </div>

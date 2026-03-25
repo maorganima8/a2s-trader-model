@@ -26,10 +26,12 @@ export default async function ChecklistPage() {
 
   return (
     <div className="px-4 pt-6 max-w-lg mx-auto">
-      <h1 className="text-xl font-bold text-white mb-1">צ׳קליסט טרום-סשן</h1>
-      <p className="text-gray-400 text-sm mb-6">
-        {new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}
-      </p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-black text-white">צ'קליסט יומי</h1>
+        <p className="text-zinc-500 text-sm mt-0.5">
+          {new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}
+        </p>
+      </div>
       <ChecklistClient steps={CHECKLIST_STEPS} initialSteps={initialSteps} />
     </div>
   );
