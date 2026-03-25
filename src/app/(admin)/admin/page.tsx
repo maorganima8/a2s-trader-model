@@ -111,7 +111,7 @@ export default async function AdminDashboard() {
           </Link>
         </div>
         <div className="divide-y divide-zinc-800">
-          {activeStudents.slice(0, 8).map((student) => {
+          {activeStudents.slice(0, 8).map((student: typeof activeStudents[0]) => {
             const traded = tradedToday.has(student.id);
             const checklist = checklistedToday.has(student.id);
             const reviewed = reviewedThisWeek.has(student.id);
