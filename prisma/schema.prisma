@@ -1,0 +1,269 @@
+// A2S Trader App - Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MENTOR
+  STUDENT
+}
+
+enum Market {
+  FOREX
+  FUTURES
+}
+
+enum Process {
+  MMXM
+  PO3
+  ERL_IRL
+}
+
+enum TradeType {
+  LIVE
+  BACKTEST
+}
+
+enum TradeResult {
+  WIN
+  LOSS
+  BE
+}
+
+// ─── NextAuth Models ──────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Core User ────────────────────────────────────────────
+
+model User {
+  id    String @id @default(cuid())
+  name  String
+  email String @unique
+  phone String?
+  role  Role   @default(STUDENT)
+
+  // Auth
+  password      String?   // hashed with bcryptjs
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+
+  // Subscription / lifecycle
+  joinedAt        DateTime?
+  accessExpiresAt DateTime? // joinedAt + 180 days
+  market          Market?
+
+  // Notification preferences
+  notifyWhatsapp  Boolean @default(true)
+  notifyEmail     Boolean @default(true)
+  notifyPush      Boolean @default(false)
+  pushSubscription String? // JSON string of Web Push subscription
+
+  // Relations
+  studentProfile StudentProfile?
+  trades         Trade[]
+  checklists     ChecklistEntry[]
+  weeklyReviews  WeeklyReview[]
+  mistakes       Mistake[]
+  notes          PersonalNote[]
+
+  // Mentor: students assigned to this mentor
+  mentorStudents StudentProfile[] @relation("MentorStudents")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Student Profile (Lesson 2 Questionnaire) ─────────────
+
+model StudentProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  mentorId String?
+  mentor   User?   @relation("MentorStudents", fields: [mentorId], references: [id])
+
+  // Questionnaire — student fills with mentor in lesson 2
+  market           Market?
+  barriers         String?   // מה מונע ממך לסחור נכון
+  positionDuration String?   // כמה זמן פוזיציה
+  tradesPerDay     Int?
+  limitReaction    String?   // תגובה כשעסקה בגבול
+  biggestFear      String?   // הפחד לפני כניסה
+  tradeType        String?   // סוג עסקה מחפש
+  processKnowledge String[]  // PO3, MMXM, IRL>ERL — what student knows
+
+  // Mentor-only fields (only mentor can edit these)
+  preferredTF   String?   // טיים פריים
+  tradingHours  String?   // שעות מסחר (up to 2h based on market)
+  tradingDays   String[]  // ימים למסחר
+  pdArray       String?   // אסטרטגיית Pd-Array
+  process       Process?  // התהליך שעובד לפיו
+  riskLevel1    Float?    // רמת סיכון ראשון
+  riskLevel2    Float?    // רמת סיכון שלב הבא
+  smt           Boolean?  // SMT כן/לא
+
+  hasPersonalModel Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Trade Journal ────────────────────────────────────────
+
+model Trade {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      TradeType
+  entryTime DateTime
+  exitTime  DateTime?
+  duration  Int?      // minutes — auto-calculated
+
+  asset          String  // EURUSD, ES etc.
+  killzone       String? // London Open, NY Open etc.
+  tradingViewUrl String?
+  weekday        String? // auto-calculated from entryTime
+
+  process   String?
+  setupType String?
+  entryTF   String? // 5M, 1H etc.
+
+  result TradeResult
+  rr     Float?
+  notes  String?
+
+  // Win extras
+  rating      Int?    // 1-10
+  proudScore  Int?    // כמה אתה גאה
+  whatWasGood String?
+
+  // Loss extras
+  mistake String? // מה הטעות — also added to Mistake model
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Daily Checklist ──────────────────────────────────────
+
+model ChecklistEntry {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime // date of the session (no time)
+
+  // 6 pre-session steps
+  step1 Boolean @default(false) // בדיקה ביחס לסקירה שבועית
+  step2 Boolean @default(false) // סימון נזילות בגרף יומי
+  step3 Boolean @default(false) // נזילות ב-4H + אזורי עניין
+  step4 Boolean @default(false) // הבנת אורדר פלואו שעתי
+  step5 Boolean @default(false) // זיהוי תהליך ב-15M לפי המודל
+  step6 Boolean @default(false) // אישורי כניסה ב-5-1M
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, date])
+}
+
+// ─── Weekly Review ────────────────────────────────────────
+
+model WeeklyReview {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weekStart   DateTime
+  content     String?
+  submittedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, weekStart])
+}
+
+// ─── Mistakes List ────────────────────────────────────────
+
+model Mistake {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  description String
+  tradeId     String?  // optional link to specific trade
+  isManual    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Personal Notes ───────────────────────────────────────
+
+model PersonalNote {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Live Sessions (from Fireberry via Sebastian) ─────────
+
+model LiveSession {
+  id          String   @id @default(cuid())
+  title       String
+  scheduledAt DateTime
+  description String?
+  fireberyId  String?  @unique // ID from Fireberry
+
+  createdAt DateTime @default(now())
+}
