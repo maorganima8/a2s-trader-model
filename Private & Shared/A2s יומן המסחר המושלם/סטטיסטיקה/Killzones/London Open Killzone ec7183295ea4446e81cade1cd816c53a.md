@@ -1,0 +1,7 @@
+# London Open Killzone
+
+Total R:R: 6
+Avg. R:R : 3
+Avg. Risk:Reward: 3
+Trading Journal:  עסקת לייב (../../%D7%AA%D7%99%D7%A2%D7%95%D7%93%20%D7%A2%D7%A1%D7%A7%D7%90%D7%95%D7%AA/Trading%20Journal%20v2/%D7%A2%D7%A1%D7%A7%D7%AA%20%D7%9C%D7%99%D7%99%D7%91%2091dd3fd6d79a4fd6be61e273d65d00ad.md),  עסקת לייב (1) (../../%D7%AA%D7%99%D7%A2%D7%95%D7%93%20%D7%A2%D7%A1%D7%A7%D7%90%D7%95%D7%AA/Trading%20Journal%20v2/%D7%A2%D7%A1%D7%A7%D7%AA%20%D7%9C%D7%99%D7%99%D7%91%20(1)%2030f464dceb1d801a99e9eb3dfe7177c3.md)
+Win Rate: 1
