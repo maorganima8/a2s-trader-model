@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "A2s Trade Guard",
+  "version": "1.0.0",
+  "description": "מונע ביצוע עסקאות בלי להשלים את הצ'קליסט היומי",
+  "default_locale": "he",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.tradingview.com/*",
+        "https://tradingview.com/*"
+      ],
+      "js": ["lib/checklist.js", "lib/storage.js", "lib/history.js", "content/guard.js", "content/tradingview.js"],
+      "css": ["content/styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://app.topstepx.com/*",
+        "https://topstepx.com/*"
+      ],
+      "js": ["lib/checklist.js", "lib/storage.js", "lib/history.js", "content/guard.js", "content/topstepx.js"],
+      "css": ["content/styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

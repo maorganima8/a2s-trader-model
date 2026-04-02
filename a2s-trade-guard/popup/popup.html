@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="popup.css">
+  <title>A2s Trade Guard</title>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <span class="logo-icon">🛡️</span>
+        <div>
+          <div class="logo-title">A2s Trade Guard</div>
+          <div class="logo-sub" id="status-text">טוען...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Card -->
+    <div class="status-card" id="status-card">
+      <div class="status-indicator" id="status-indicator">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-label">בודק...</span>
+      </div>
+      <div class="status-timer" id="status-timer"></div>
+    </div>
+
+    <!-- Today's Checklist -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">צ'קליסט יומי</span>
+        <span class="section-count" id="checklist-count">0/6</span>
+      </div>
+      <div class="checklist" id="checklist"></div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+      <button class="btn btn-primary" id="btn-unlock" disabled>
+        השלם צ'קליסט כדי לפתוח
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="today">היום</button>
+      <button class="tab" data-tab="history">היסטוריה</button>
+      <button class="tab" data-tab="settings">הגדרות</button>
+    </div>
+
+    <!-- Today Tab -->
+    <div class="tab-content active" id="tab-today">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-blocked">0</div>
+          <div class="stat-label">ניסיונות חסומים</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-completed">0</div>
+          <div class="stat-label">צ'קליסטים שהושלמו</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-bypasses">0</div>
+          <div class="stat-label">עקיפות</div>
+        </div>
+      </div>
+      <div class="events-list" id="today-events"></div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content" id="tab-history">
+      <div class="events-list" id="history-events"></div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content" id="tab-settings">
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-label">זמן פתיחה (דקות)</div>
+          <div class="setting-desc">כמה זמן המסחר פתוח אחרי השלמת הצ'קליסט</div>
+        </div>
+        <input type="number" class="setting-input" id="setting-duration" value="30" min="5" max="480">
+      </div>
+    </div>
+  </div>
+
+  <script src="../lib/checklist.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
