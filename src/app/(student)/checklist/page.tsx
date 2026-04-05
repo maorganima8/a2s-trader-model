@@ -24,15 +24,25 @@ export default async function ChecklistPage() {
     step6: checklist?.step6 ?? false,
   };
 
+  const doneCount = Object.values(initialSteps).filter(Boolean).length;
+
   return (
-    <div className="px-4 pt-6 max-w-lg mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-white">צ'קליסט יומי</h1>
-        <p className="text-zinc-500 text-sm mt-0.5">
-          {new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
+    <div className="min-h-screen bg-surface">
+      <header className="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex items-center justify-between px-6 lg:px-12 h-20 border-b border-outline-variant/10">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">
+            {new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+          <h2 className="text-2xl font-black tracking-tighter text-on-surface">צ&apos;קליסט יומי</h2>
+        </div>
+        <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${doneCount === 6 ? "bg-primary-container text-on-primary-container" : "bg-surface-container text-on-surface-variant"}`}>
+          {doneCount}/6
+        </span>
+      </header>
+
+      <div className="p-6 lg:p-12 max-w-2xl">
+        <ChecklistClient steps={CHECKLIST_STEPS} initialSteps={initialSteps} />
       </div>
-      <ChecklistClient steps={CHECKLIST_STEPS} initialSteps={initialSteps} />
     </div>
   );
 }

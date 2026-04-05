@@ -42,27 +42,30 @@ export default function ChecklistClient({ steps, initialSteps }: Props) {
   }
 
   return (
-    <div className="space-y-3 pb-24">
-      {/* Progress bar */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 mb-2">
-        <div className="flex items-center justify-between mb-2.5">
-          <span className="text-zinc-400 text-sm">התקדמות</span>
-          <span className={`text-sm font-bold ${allDone ? "text-yellow-400" : "text-white"}`}>
+    <div className="space-y-4 pb-24 lg:pb-8">
+      {/* Progress */}
+      <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl p-6 mb-2">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-bold text-on-surface-variant uppercase tracking-widest">התקדמות</span>
+          <span className={`text-sm font-black ${allDone ? "text-primary" : "text-on-surface"}`}>
             {doneCount}/{steps.length}
           </span>
         </div>
-        <div className="w-full bg-zinc-800 rounded-full h-1.5">
+        <div className="w-full bg-surface-container-highest rounded-full h-2">
           <div
-            className={`h-1.5 rounded-full transition-all duration-500 ${allDone ? "bg-yellow-400" : "bg-yellow-500"}`}
+            className="h-2 rounded-full transition-all duration-500 bg-primary-container"
             style={{ width: `${pct}%` }}
           />
         </div>
         {allDone && (
-          <div className="mt-3 flex items-center justify-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl py-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EAB308" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            <span className="text-yellow-400 text-sm font-semibold">מוכן לסשן!</span>
+          <div className="mt-4 flex items-center justify-center gap-2 bg-primary-container/20 border border-primary-container rounded-xl py-3">
+            <span
+              className="material-symbols-outlined text-on-primary-container text-base"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              verified
+            </span>
+            <span className="text-on-primary-container text-sm font-bold">מוכן לסשן!</span>
           </div>
         )}
       </div>
@@ -77,36 +80,36 @@ export default function ChecklistClient({ steps, initialSteps }: Props) {
             key={step.id}
             onClick={() => toggle(step.id)}
             disabled={isLoading}
-            className={`w-full text-right p-4 rounded-2xl border transition-all duration-200 flex items-start gap-3 ${
+            className={`w-full text-right p-5 rounded-2xl border transition-all duration-200 flex items-start gap-4 ${
               done
-                ? "bg-yellow-500/5 border-yellow-500/25"
-                : "bg-zinc-900 border-zinc-800 hover:border-zinc-700 active:scale-[0.99]"
+                ? "bg-primary-container/10 border-primary-container/30"
+                : "bg-surface-container-lowest border-outline-variant/10 hover:border-outline-variant hover:shadow-sm active:scale-[0.99]"
             } ${isLoading ? "opacity-60" : ""}`}
           >
-            {/* Circle */}
-            <div className={`flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
-              done ? "bg-yellow-500 border-yellow-500" : "border-zinc-700"
+            <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center mt-0.5 transition-all ${
+              done ? "bg-primary-container" : "border-2 border-outline-variant bg-surface-container"
             }`}>
               {done ? (
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
+                <span
+                  className="material-symbols-outlined text-on-primary-container text-sm"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  check
+                </span>
               ) : (
-                <span className="text-zinc-600 text-xs font-bold">{index + 1}</span>
+                <span className="text-on-surface-variant text-xs font-black">{index + 1}</span>
               )}
             </div>
-
-            {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                <span className={`text-sm font-semibold transition-all ${done ? "text-zinc-500 line-through" : "text-white"}`}>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className={`text-sm font-bold transition-all ${done ? "text-on-surface-variant line-through" : "text-on-surface"}`}>
                   {step.title}
                 </span>
-                <span className="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-md font-mono">
+                <span className="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md font-mono border border-outline-variant/20">
                   {step.tf}
                 </span>
               </div>
-              <p className={`text-xs leading-relaxed ${done ? "text-zinc-600" : "text-zinc-500"}`}>
+              <p className={`text-xs leading-relaxed ${done ? "text-on-surface-variant/50" : "text-on-surface-variant"}`}>
                 {step.description}
               </p>
             </div>

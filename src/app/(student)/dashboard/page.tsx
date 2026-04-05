@@ -13,6 +13,15 @@ function getDaysSinceJoined(joinedAt: Date | null): number {
   return Math.floor((Date.now() - joinedAt.getTime()) / 86400000);
 }
 
+const STEP_LABELS = [
+  "סקירת שבועי",
+  "נזילות יומי",
+  "זונות עניין 4H",
+  "סדר זרימה 1H",
+  "תהליך 15M",
+  "אישורי כניסה",
+];
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) return null;
@@ -30,174 +39,246 @@ export default async function DashboardPage() {
     where: { userId_date: { userId: user.id, date: today } },
   });
 
-  const checklistDone = checklist
-    ? [checklist.step1, checklist.step2, checklist.step3, checklist.step4, checklist.step5, checklist.step6].filter(Boolean).length
-    : 0;
+  const checklistSteps = checklist
+    ? [checklist.step1, checklist.step2, checklist.step3, checklist.step4, checklist.step5, checklist.step6]
+    : Array(6).fill(false);
+  const checklistDone = checklistSteps.filter(Boolean).length;
+  const checklistPct = Math.round((checklistDone / 6) * 100);
 
   const daysRemaining = getDaysRemaining(user.accessExpiresAt);
   const dayNumber = getDaysSinceJoined(user.joinedAt) + 1;
   const progressPct = Math.min(100, Math.round((dayNumber / 90) * 100));
 
-  const recentTrades = await prisma.trade.findMany({
+  const allTrades = await prisma.trade.findMany({
     where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    take: 5,
+    orderBy: { entryTime: "desc" },
   });
 
-  const totalTrades = recentTrades.length;
-  const wins = recentTrades.filter((t) => t.result === "WIN").length;
+  const totalTrades = allTrades.length;
+  const wins = allTrades.filter((t) => t.result === "WIN").length;
+  const losses = allTrades.filter((t) => t.result === "LOSS").length;
+  const winRate = totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0;
+  const totalR = allTrades.reduce((sum, t) => sum + (t.rr ?? 0), 0);
+
+  // Last 7 days activity
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (6 - i));
+    return d;
+  });
+
+  const weekDayMap = last7.map((d) => {
+    const dayTrades = allTrades.filter((t) => {
+      const td = new Date(t.entryTime);
+      td.setHours(0, 0, 0, 0);
+      return td.getTime() === d.getTime();
+    });
+    return {
+      date: d.getDate(),
+      count: dayTrades.length,
+      wins: dayTrades.filter((t) => t.result === "WIN").length,
+      losses: dayTrades.filter((t) => t.result === "LOSS").length,
+      isToday: d.getTime() === today.getTime(),
+    };
+  });
+
+  const maxCount = Math.max(...weekDayMap.map((d) => d.count), 1);
+  const firstName = user.name?.split(" ")[0] ?? "סוחר";
 
   return (
-    <div className="px-4 pt-8 pb-28 max-w-lg mx-auto space-y-5">
-
-      {/* Greeting */}
-      <div className="flex items-start justify-between">
+    <div className="min-h-screen bg-surface">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex items-center justify-between px-6 lg:px-12 h-20 border-b border-outline-variant/10">
         <div>
-          <p className="text-sm font-medium mb-0.5" style={{ color: 'var(--md-on-surface-variant)' }}>
+          <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
             יום {dayNumber} לתוכנית
           </p>
-          <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--md-on-surface)' }}>
-            שלום, {user.name.split(" ")[0]}
-          </h1>
+          <h2 className="text-2xl font-black tracking-tighter text-on-surface">שלום, {firstName}</h2>
         </div>
-        {daysRemaining !== null && (
-          <div
-            className="text-center rounded-2xl px-4 py-2.5"
-            style={{ backgroundColor: daysRemaining <= 14 ? '#4a0000' : 'var(--md-surface-container)', color: daysRemaining <= 14 ? '#ffb4ab' : 'var(--md-on-surface)' }}
-          >
-            <p className="text-2xl font-bold leading-none">{daysRemaining}</p>
-            <p className="text-xs mt-0.5 opacity-70">ימים נותרו</p>
-          </div>
-        )}
-      </div>
-
-      {/* Program progress — M3 filled card */}
-      <div className="rounded-3xl p-5" style={{ backgroundColor: 'var(--md-surface-container)' }}>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium" style={{ color: 'var(--md-on-surface)' }}>התקדמות בתוכנית</span>
-          <span className="text-sm font-bold" style={{ color: 'var(--md-primary)' }}>{progressPct}%</span>
-        </div>
-        <p className="text-xs mb-3" style={{ color: 'var(--md-on-surface-variant)' }}>יום {dayNumber} מתוך 90</p>
-        <div className="w-full rounded-full h-2" style={{ backgroundColor: 'var(--md-surface-highest)' }}>
-          <div
-            className="h-2 rounded-full transition-all"
-            style={{ width: `${progressPct}%`, backgroundColor: 'var(--md-primary)' }}
-          />
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "עסקאות", value: totalTrades, color: 'var(--md-on-surface)' },
-          { label: "WIN Rate", value: totalTrades > 0 ? `${Math.round((wins / totalTrades) * 100)}%` : "—", color: 'var(--md-success)' },
-          { label: "צ'קליסט", value: `${checklistDone}/6`, color: checklistDone === 6 ? 'var(--md-primary)' : 'var(--md-on-surface)' },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-2xl p-4 text-center" style={{ backgroundColor: 'var(--md-surface-container)' }}>
-            <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--md-on-surface-variant)' }}>{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Checklist card — M3 outlined card */}
-      <Link href="/checklist">
-        <div
-          className="rounded-3xl p-5 transition-all active:scale-[0.98]"
-          style={{ backgroundColor: 'var(--md-surface-container)', border: checklistDone === 6 ? '1px solid var(--md-primary)' : '1px solid var(--md-outline-variant)' }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: checklistDone === 6 ? 'var(--md-primary-container)' : 'var(--md-surface-high)' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={checklistDone === 6 ? 'var(--md-primary)' : 'var(--md-on-surface-variant)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 11l3 3L22 4"/>
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                </svg>
-              </div>
-              <div>
-                <p className="font-semibold text-sm" style={{ color: 'var(--md-on-surface)' }}>צ'קליסט יומי</p>
-                <p className="text-xs" style={{ color: 'var(--md-on-surface-variant)' }}>
-                  {checklistDone === 0 ? "לא התחלת עדיין" : checklistDone === 6 ? "הושלם!" : `${checklistDone} מתוך 6`}
-                </p>
-              </div>
-            </div>
-            <span className="text-sm font-bold" style={{ color: 'var(--md-primary)' }}>{checklistDone}/6</span>
-          </div>
-          <div className="w-full rounded-full h-1.5" style={{ backgroundColor: 'var(--md-surface-highest)' }}>
-            <div className="h-1.5 rounded-full transition-all" style={{ width: `${(checklistDone / 6) * 100}%`, backgroundColor: 'var(--md-primary)' }} />
-          </div>
-        </div>
-      </Link>
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-3">
         <Link href="/journal/new">
-          <div className="rounded-3xl p-5 transition-all active:scale-[0.98]" style={{ backgroundColor: 'var(--md-surface-container)' }}>
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--md-primary-container)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--md-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            </div>
-            <p className="font-semibold text-sm" style={{ color: 'var(--md-on-surface)' }}>תעד עסקה</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--md-on-surface-variant)' }}>הוסף ליומן</p>
-          </div>
+          <button className="hidden lg:flex items-center gap-2 bg-primary-container text-on-primary-container font-bold px-5 py-2.5 rounded-xl shadow hover:scale-[0.98] transition-all text-sm">
+            <span className="material-symbols-outlined text-base">add</span>
+            עסקה חדשה
+          </button>
         </Link>
-        <Link href="/journal/weekly">
-          <div className="rounded-3xl p-5 transition-all active:scale-[0.98]" style={{ backgroundColor: 'var(--md-surface-container)' }}>
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--md-surface-high)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--md-on-surface-variant)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-            </div>
-            <p className="font-semibold text-sm" style={{ color: 'var(--md-on-surface)' }}>סקירה שבועית</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--md-on-surface-variant)' }}>סיכום שבועי</p>
-          </div>
-        </Link>
-      </div>
+      </header>
 
-      {/* Recent trades */}
-      {recentTrades.length > 0 ? (
-        <div className="rounded-3xl overflow-hidden" style={{ backgroundColor: 'var(--md-surface-container)' }}>
-          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--md-outline-variant)' }}>
-            <span className="font-semibold text-sm" style={{ color: 'var(--md-on-surface)' }}>עסקאות אחרונות</span>
-            <Link href="/journal" className="text-xs font-medium" style={{ color: 'var(--md-primary)' }}>הצג הכל</Link>
-          </div>
-          {recentTrades.map((trade, i) => (
-            <div
-              key={trade.id}
-              className="flex items-center justify-between px-5 py-3.5"
-              style={{ borderBottom: i < recentTrades.length - 1 ? '1px solid var(--md-outline-variant)' : 'none' }}
-            >
+      <div className="p-6 lg:p-12 pb-28 lg:pb-12 max-w-7xl mx-auto space-y-6">
+        {/* Hero Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Stats Hero Card */}
+          <div className="lg:col-span-8 bg-primary-container rounded-[2rem] p-8 lg:p-10 flex flex-col justify-between min-h-[260px] relative overflow-hidden shadow-sm">
+            <div className="absolute -top-10 -start-10 w-64 h-64 bg-on-primary-container/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10">
+              <span className="px-4 py-1 bg-on-primary-container/10 rounded-full text-xs font-bold uppercase tracking-widest text-on-primary-container mb-4 inline-block">
+                ביצועי תוכנית
+              </span>
+              <h2 className="text-5xl font-black tracking-tighter text-on-primary-container">
+                {totalR >= 0 ? "+" : ""}{totalR.toFixed(1)}R
+              </h2>
+              <p className="mt-2 text-on-primary-container/70 font-medium">סה&quot;כ יחידות סיכון מצטברות</p>
+            </div>
+            <div className="relative z-10 grid grid-cols-3 gap-6 mt-8 border-t border-on-primary-container/10 pt-6">
               <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--md-on-surface)' }}>{trade.asset || "—"}</p>
-                <p className="text-xs" style={{ color: 'var(--md-on-surface-variant)' }}>{trade.killzone ?? "—"}</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-on-primary-container/60 mb-1">Win Rate</p>
+                <p className="text-3xl font-bold text-on-primary-container">{winRate}%</p>
               </div>
-              <div className="flex items-center gap-2">
-                {trade.rr && <span className="text-xs" style={{ color: 'var(--md-on-surface-variant)' }}>{trade.rr}R</span>}
-                <span
-                  className="text-xs font-bold px-2.5 py-1 rounded-full"
-                  style={{
-                    backgroundColor: trade.result === "WIN" ? 'rgba(109,213,140,0.15)' : trade.result === "LOSS" ? 'rgba(255,180,171,0.15)' : 'var(--md-primary-container)',
-                    color: trade.result === "WIN" ? 'var(--md-success)' : trade.result === "LOSS" ? 'var(--md-error)' : 'var(--md-primary)',
-                  }}
-                >
-                  {trade.result}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-on-primary-container/60 mb-1">W / L</p>
+                <p className="text-3xl font-bold text-on-primary-container">{wins}/{losses}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-on-primary-container/60 mb-1">עסקאות</p>
+                <p className="text-3xl font-bold text-on-primary-container">{totalTrades}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Days Ring */}
+          <div className="lg:col-span-4 bg-surface-container-lowest border border-outline-variant/15 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center">
+            <div className="relative w-44 h-44 mb-5">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 192 192">
+                <circle cx="96" cy="96" r="80" fill="transparent" stroke="#e5e2e1" strokeWidth="12" />
+                <circle
+                  cx="96" cy="96" r="80"
+                  fill="transparent"
+                  stroke="#fbc02d"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeDasharray="502"
+                  strokeDashoffset={Math.round(502 - (progressPct / 100) * 502)}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-5xl font-black text-on-surface">
+                  {daysRemaining !== null ? daysRemaining : dayNumber}
+                </span>
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+                  {daysRemaining !== null ? "ימים נותרו" : `יום`}
                 </span>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-3xl p-10 text-center" style={{ backgroundColor: 'var(--md-surface-container)' }}>
-          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: 'var(--md-surface-high)' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--md-on-surface-variant)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
+            <h3 className="text-lg font-bold text-on-surface">התקדמות בתוכנית</h3>
+            <p className="text-sm text-on-surface-variant mt-1">יום {dayNumber} מתוך 90 · {progressPct}%</p>
           </div>
-          <p className="font-medium text-sm" style={{ color: 'var(--md-on-surface)' }}>אין עסקאות עדיין</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--md-on-surface-variant)' }}>תעד את העסקה הראשונה שלך</p>
-        </div>
-      )}
+        </section>
+
+        {/* Secondary Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Checklist */}
+          <div className="lg:col-span-4 bg-surface-container-low rounded-[1.5rem] p-8">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-xl font-extrabold tracking-tight text-on-surface">צ&apos;קליסט יומי</h3>
+              <span
+                className={`material-symbols-outlined ${checklistDone === 6 ? "text-primary" : "text-on-surface-variant"}`}
+                style={{ fontVariationSettings: checklistDone === 6 ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                verified
+              </span>
+            </div>
+            <div className="mb-5">
+              <div className="flex justify-between text-xs font-bold mb-2">
+                <span className="text-on-surface-variant uppercase tracking-widest">התקדמות</span>
+                <span className="text-on-surface">{checklistDone}/6</span>
+              </div>
+              <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                <div className="h-full bg-primary-container rounded-full transition-all" style={{ width: `${checklistPct}%` }} />
+              </div>
+            </div>
+            <ul className="space-y-2 mb-6">
+              {STEP_LABELS.slice(0, 4).map((label, i) => {
+                const done = checklistSteps[i] as boolean;
+                return (
+                  <li key={i} className={`flex items-center gap-3 bg-surface-container-lowest p-3.5 rounded-xl border ${done ? "border-primary-container/30" : "border-outline-variant/10"}`}>
+                    <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${done ? "bg-primary-container" : "border-2 border-outline-variant"}`}>
+                      {done && (
+                        <span className="material-symbols-outlined text-on-primary-container" style={{ fontSize: "14px", fontVariationSettings: "'FILL' 1" }}>check</span>
+                      )}
+                    </div>
+                    <span className={`text-sm font-semibold ${done ? "text-on-surface-variant line-through" : "text-on-surface"}`}>{label}</span>
+                  </li>
+                );
+              })}
+            </ul>
+            <Link href="/checklist">
+              <div className="w-full py-3.5 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-container-highest transition-colors text-center text-sm">
+                פתח צ&apos;קליסט מלא
+              </div>
+            </Link>
+          </div>
+
+          {/* Weekly Activity */}
+          <div className="lg:col-span-8 bg-surface-container-lowest border border-outline-variant/15 rounded-[1.5rem] p-8">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-xl font-extrabold tracking-tight text-on-surface">פעילות שבועית</h3>
+                <p className="text-sm text-on-surface-variant mt-0.5">7 ימים אחרונים</p>
+              </div>
+              <Link href="/journal" className="text-sm font-bold text-primary underline">יומן מלא</Link>
+            </div>
+            <div className="flex items-end justify-between gap-3" style={{ height: "180px" }}>
+              {weekDayMap.map((day, i) => {
+                const heightPct = day.count > 0 ? Math.max(15, Math.round((day.count / maxCount) * 100)) : 0;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                    <div className="text-[10px] font-bold text-on-surface-variant h-4">
+                      {day.count > 0 ? `${day.wins}W${day.losses > 0 ? ` ${day.losses}L` : ""}` : ""}
+                    </div>
+                    <div className="w-full flex items-end flex-1">
+                      <div
+                        className={`w-full rounded-t-xl transition-all duration-500 ${
+                          day.isToday
+                            ? "bg-primary-container border-2 border-primary"
+                            : day.count > 0
+                            ? "bg-on-surface group-hover:bg-primary-container"
+                            : "bg-surface-container-high"
+                        }`}
+                        style={{ height: day.count > 0 ? `${heightPct}%` : "6px" }}
+                      />
+                    </div>
+                    <div className={`text-[10px] font-bold ${day.isToday ? "text-primary" : "text-on-surface-variant"}`}>
+                      {day.date}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Recent trades */}
+        {allTrades.length > 0 && (
+          <section className="bg-surface-container-lowest rounded-[1.5rem] overflow-hidden border border-outline-variant/10">
+            <div className="p-6 lg:p-8 border-b border-outline-variant/10 flex justify-between items-center">
+              <h3 className="text-lg font-black tracking-tight text-on-surface">עסקאות אחרונות</h3>
+              <Link href="/journal" className="text-sm font-bold text-primary underline">הצג הכל</Link>
+            </div>
+            <div className="divide-y divide-outline-variant/5">
+              {allTrades.slice(0, 5).map((trade) => (
+                <div key={trade.id} className="flex items-center justify-between px-6 lg:px-8 py-4 hover:bg-surface-container-low transition-colors">
+                  <div>
+                    <p className="font-bold text-on-surface">{trade.asset || "—"}</p>
+                    <p className="text-xs text-on-surface-variant mt-0.5">
+                      {[trade.killzone, trade.entryTF].filter(Boolean).join(" · ") || "—"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {trade.rr && <span className="text-sm text-on-surface-variant">{trade.rr}R</span>}
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                      trade.result === "WIN" ? "bg-green-100 text-green-700" :
+                      trade.result === "LOSS" ? "bg-error-container text-error" :
+                      "bg-surface-container text-on-surface-variant"
+                    }`}>
+                      {trade.result}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
